@@ -4,13 +4,13 @@ import torch.optim as optim
 import torch.nn.functional as F
 from models.sentence_linker import SentenceLinker
 from models.sentence_linker_discriminator import SentenceLinkerDiscriminator
-from batchers.wiki_links_batch import WikiLinksBatch
+from batchers.wiki_full_links_batch import WikiLinksBatch
 from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
 import time
 import sys
 from configs import configs
-
+from torch.autograd import Variable
 
 print(int(sys.argv[1]))
 config = configs[int(sys.argv[1])]
@@ -21,43 +21,45 @@ if config['training']['log']:
     writer = SummaryWriter(log_dir="./train/logs/"+config['name'])
 
 
-def loss_calc(output, target, reduction='mean'):
-    loss = 0
-    for b in range(len(target)):
-        b_loss = 1e6
-        for l in range(len(target[b])):
-            bl_loss = F.mse_loss(output[b].expand(1, config['s2v_dim']),
-                                 target[b, l].expand(1, config['s2v_dim']))
-            if b_loss > bl_loss:
-                b_loss = bl_loss  # min value
-        loss += b_loss
-    if reduction == 'mean':
-        loss /= len(target)
-    return loss
-
 # def loss_calc(output, target, reduction='mean'):
-#     output_size = 1
 #     loss = 0
-#     target_cnt_list = []
-#     for b in target:
-#         target_cnt = 0
-#         for t in b:
-#             if torch.sum(torch.abs(t)) < 10000:
-#                 target_cnt += 1
-#         target_cnt_list.append(target_cnt)
 #     for b in range(len(target)):
-#         loss_res = torch.ones((output_size, target_cnt_list[b]))
-#         for o in range(output_size):
-#             for t in range(target_cnt_list[b]):
-#                 bl_loss = F.mse_loss(output[b].expand(1, config['s2v_dim']),
-#                                      target[b, t].expand(1, config['s2v_dim']))
-#                 loss_res[o, t] = bl_loss
-#         # loss += loss_res.min()
-#         loss_out = torch.sort(torch.min(loss_res, dim=0)[0])[0][0:output_size]
-#         loss += torch.mean(loss_out)
+#         b_loss = 1e6
+#         for l in range(len(target[b])):
+#             bl_loss = F.mse_loss(output[b].expand(1, config['s2v_dim']),
+#                                  target[b, l].expand(1, config['s2v_dim']))
+#             if b_loss > bl_loss:
+#                 b_loss = bl_loss  # min value
+#         loss += b_loss
 #     if reduction == 'mean':
 #         loss /= len(target)
 #     return loss
+
+def loss_calc(output, target, reduction='mean'):
+    output_size = 1
+    loss = 0
+    target_cnt_list = []
+    for b in target:
+        target_cnt = 0
+        for t in b:
+            if torch.sum(torch.abs(t)) < 10000:
+                target_cnt += 1
+        target_cnt_list.append(target_cnt)
+    for b in range(len(target)):
+        loss_res = torch.ones((output_size, target_cnt_list[b]))
+        for o in range(output_size):
+            for t in range(target_cnt_list[b]):
+                bl_loss = F.mse_loss(output[b].expand(1, config['s2v_dim']),
+                                     target[b, t].expand(1, config['s2v_dim']))
+                loss_res[o, t] = bl_loss
+        # loss += loss_res.min()
+        # print(len(target))
+        # print(loss_res)
+        loss_out = torch.sort(torch.min(loss_res, dim=0)[0])[0][0:output_size]
+        loss += torch.mean(loss_out)
+    if reduction == 'mean':
+        loss /= len(target)
+    return loss
 
 
 def train(model, discriminator, device, train_loader,
@@ -161,7 +163,7 @@ data_loader_test = torch.utils.data.DataLoader(
     dataset_test, batch_size=config['batch_size'],
     shuffle=False, num_workers=4)
 
-# scheduler = lr_scheduler(optimizer, step_size=1, gamma=args.gamma)
+# scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[30, 80], gamma=0.1)
 for epoch in range(1, config['training']['epochs'] + 1):
     train(model, model_discriminator, device, data_loader_train,
           optimizer, optimizer_discriminator, epoch)
