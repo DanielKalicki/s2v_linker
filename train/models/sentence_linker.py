@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import math
 from torch.nn.parameter import Parameter
+from torch.nn import Parameter
 
 
 class Mish(nn.Module):
@@ -409,45 +410,53 @@ class SentenceLinker(nn.Module):
         super(SentenceLinker, self).__init__()
         self.s2v_dim = config['s2v_dim']
         self.layers = nn.ModuleList()
+        self.config = config
         if config['sentence_linker']['input_drop'] != 0.0:
             self.layers.append(nn.Dropout(
                 p=config['sentence_linker']['input_drop']))
+        if config['sentence_linker']['num_gen_links'] > 1:
+            self.link_proc_layer = nn.Linear(self.s2v_dim, config['sentence_linker']['prev_link_hdim'])
 
-        for layer in config['sentence_linker']['layers']:
+        for layer_idx, layer in enumerate(config['sentence_linker']['layers']):
             layer_type = list(layer)[0]
             module_config = layer[layer_type]
+
+            input_dim = module_config['input_dim']
+            if (layer_idx == 0) and (config['sentence_linker']['num_gen_links'] > 1):
+                input_dim += config['sentence_linker']['prev_link_hdim']
+
             if layer_type == 'SteGluFfn':
-                module = SteGluFfn(input_dim=module_config['input_dim'],
+                module = SteGluFfn(input_dim=input_dim,
                                    hidden_dim=module_config['hidden_dim'],
                                    output_dim=module_config['output_dim'],
                                    drop=module_config['ste_drop'],
                                    ste_layers_cnt=module_config['ste_layers_cnt'])
             elif layer_type == 'GluFfn':
-                module = GluFfn(input_dim=module_config['input_dim'],
+                module = GluFfn(input_dim=input_dim,
                                 hidden_dim=module_config['hidden_dim'],
                                 output_dim=module_config['output_dim'])
             elif layer_type == 'SteFfn':
-                module = SteFfn(input_dim=module_config['input_dim'],
+                module = SteFfn(input_dim=input_dim,
                                 hidden_dim=module_config['hidden_dim'],
                                 output_dim=module_config['output_dim'],
                                 drop=module_config['ste_drop'],
                                 ste_layers_cnt=module_config['ste_layers_cnt'])
             elif layer_type == 'ResFfn':
-                module = ResFfn(input_dim=module_config['input_dim'],
+                module = ResFfn(input_dim=input_dim,
                                 hidden_dim=module_config['hidden_dim'],
                                 output_dim=module_config['output_dim'],
                                 drop=module_config['res_drop'])
             elif layer_type == 'ResGlu':
-                module = ResGlu(input_dim=module_config['input_dim'],
+                module = ResGlu(input_dim=input_dim,
                                 output_dim=module_config['output_dim'],
                                 drop=module_config['res_drop'])
             elif layer_type == 'GateOutFfn':
-                module = GateOutFfn(input_dim=module_config['input_dim'],
+                module = GateOutFfn(input_dim=input_dim,
                                     hidden_dim=module_config['hidden_dim'],
                                     output_dim=module_config['output_dim'],
                                     drop=module_config['res_drop'])
             elif layer_type == 'DenseLayer':
-                module = DenseLayer(input_dim=module_config['input_dim'],
+                module = DenseLayer(input_dim=input_dim,
                                     hidden_dim=module_config['hidden_dim'],
                                     output_dim=module_config['output_dim'],
                                     drop=module_config['hid_drop'],
@@ -457,19 +466,22 @@ class SentenceLinker(nn.Module):
                                     cat_inout=module_config['cat_inout'],
                                     hidden_act=module_config['hidden_act'])
             elif layer_type == 'DenseLayer4l':
-                module = DenseLayer4l(input_dim=module_config['input_dim'],
+                module = DenseLayer4l(input_dim=input_dim,
                                       hidden_dim=module_config['hidden_dim'],
                                       output_dim=module_config['output_dim'],
                                       drop=module_config['hid_drop'],
                                       drop_pos=module_config['drop_pos'])
             elif layer_type == 'FcLayer':
-                module = FcLayer(input_dim=module_config['input_dim'],
+                module = FcLayer(input_dim=input_dim,
                                  output_dim=module_config['output_dim'],
                                  drop=module_config['drop'],
                                  act=module_config['act'])
             self.layers.append(module)
 
-    def forward(self, x):
+    def forward(self, x, prev_link):
+        if self.config['sentence_linker']['num_gen_links'] > 1:
+            prev_link = self.link_proc_layer(prev_link)
+            x = torch.cat((x, prev_link), dim=1)
         for module in self.layers:
             x = module(x)
         return x
