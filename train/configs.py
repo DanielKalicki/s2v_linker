@@ -10,16 +10,9 @@ default_config = {
         'input_drop': 0.0,
         'prev_link_hdim': 512,
         'num_gen_links': 2,
-        'layers': [
-            # {
-            #     'SteGluFfn': {
-            #         'input_dim': 4096,
-            #         'hidden_dim': 4096,
-            #         'output_dim': 4096,
-            #         'ste_drop': 0.5
-            #     }
-            # }
-        ]
+        'rnn_model': True,
+        'state_vect': False,
+        'layers': []
     },
     'training': {
         'optimizer': 'Adam',
@@ -649,6 +642,7 @@ for i in range(31, 32):
 for i in range(32, 33):
     configs[i]['training']['epochs'] = 500
     configs[i]['training']['lr'] = 5e-6
+    configs[i]['sentence_linker']['rnn_model'] = True
     configs[i]['sentence_linker']['input_drop'] = 0.2
     configs[i]['sentence_linker']['num_gen_links'] = 3
     configs[i]['sentence_linker']['prev_link_hdim'] = 2048
@@ -663,15 +657,103 @@ for i in range(32, 33):
         }
     ]
     configs[i]['name'] = 'bL128_1s_3Links_RNNprv2048_inDr.2|2xDenseLayeDr.5r_Lr5-6_500e_restore_'+str(i)
-
-#
-# TODO
-# [X] res_drop = [0.1, 0.3, 0.5]
-# [X] 3xSteGluFfn
-# [ ] gradient drop
-# [ ] dropconnect
-# [ ] NAC & NALU
-# [X] gated ResFfn -> GateOutFfn
-# [X] initial drop
-# [X] l1, l2 regularization
-# [ ] optimizers
+# -----------------------------------------------------------------------------
+for i in range(33, 34):
+    configs[i]['training']['epochs'] = 500
+    configs[i]['training']['lr'] = 5e-5
+    configs[i]['sentence_linker']['rnn_model'] = True
+    configs[i]['sentence_linker']['state_vect'] = True
+    configs[i]['sentence_linker']['input_drop'] = 0.2
+    configs[i]['sentence_linker']['num_gen_links'] = 3
+    configs[i]['sentence_linker']['prev_link_hdim'] = 2048
+    configs[i]['sentence_linker']['layers'] = [
+        {'DenseLayer': {
+            'input_dim': 4096, 'hidden_dim': 4096, 'output_dim': 4096, 'hid_drop': 0.5, 'drop_pos': 'output', 'norm': None,
+            'highway_network': None, 'cat_inout': False, 'hidden_act': 'relu'}
+        },
+        {'DenseLayer': {
+            'input_dim': 4096, 'hidden_dim': 4096, 'output_dim': 4096+2048, 'hid_drop': 0.5, 'drop_pos': 'output', 'norm': None,
+            'highway_network': None, 'cat_inout': False, 'hidden_act': 'relu'}
+        }
+    ]
+    configs[i]['name'] = 'bL128_1s_3Links_RNNstate2048_inDr.2|2xDenseLayeDr.5r_Lr5-5_500e_'+str(i)
+# -----------------------------------------------------------------------------
+for i in range(34, 35):
+    configs[i]['training']['epochs'] = 500
+    configs[i]['training']['lr'] = 5e-6
+    configs[i]['sentence_linker']['rnn_model'] = True
+    configs[i]['sentence_linker']['state_vect'] = True
+    configs[i]['sentence_linker']['input_drop'] = 0.2
+    configs[i]['sentence_linker']['num_gen_links'] = 3
+    configs[i]['sentence_linker']['prev_link_hdim'] = 2048
+    configs[i]['sentence_linker']['layers'] = [
+        {'DenseLayer': {
+            'input_dim': 4096, 'hidden_dim': 4096, 'output_dim': 4096, 'hid_drop': 0.5, 'drop_pos': 'output', 'norm': None,
+            'highway_network': None, 'cat_inout': False, 'hidden_act': 'relu'}
+        },
+        {'DenseLayer': {
+            'input_dim': 4096, 'hidden_dim': 4096, 'output_dim': 4096+2048, 'hid_drop': 0.5, 'drop_pos': 'output', 'norm': None,
+            'highway_network': None, 'cat_inout': False, 'hidden_act': 'relu'}
+        }
+    ]
+    configs[i]['name'] = 'bL128_1s_3Links_RNNstate2048_inDr.2|2xDenseLayeDr.5r_Lr5-6_restore_500e_'+str(i)
+# -----------------------------------------------------------------------------
+for i in range(35, 36):
+    configs[i]['training']['epochs'] = 500
+    configs[i]['training']['lr'] = 5e-6
+    configs[i]['sentence_linker']['rnn_model'] = True
+    configs[i]['sentence_linker']['state_vect'] = True
+    configs[i]['sentence_linker']['input_drop'] = 0.01
+    configs[i]['sentence_linker']['num_gen_links'] = 3
+    configs[i]['sentence_linker']['prev_link_hdim'] = 2048
+    configs[i]['sentence_linker']['layers'] = [
+        {'DenseLayer': {
+            'input_dim': 4096, 'hidden_dim': 4096, 'output_dim': 4096, 'hid_drop': 0.0, 'drop_pos': 'output', 'norm': None,
+            'highway_network': None, 'cat_inout': False, 'hidden_act': 'relu'}
+        },
+        {'DenseLayer': {
+            'input_dim': 4096, 'hidden_dim': 4096, 'output_dim': 4096+2048, 'hid_drop': 0.0, 'drop_pos': 'output', 'norm': None,
+            'highway_network': None, 'cat_inout': False, 'hidden_act': 'relu'}
+        }
+    ]
+    configs[i]['name'] = 'bL128_1s_3Links_RNNstate2048_inDr.01|2xDenseLayeDr.0r_Lr5-6_restore_500e_'+str(i)
+# -----------------------------------------------------------------------------
+for i in range(36, 37):
+    configs[i]['training']['epochs'] = 500
+    configs[i]['training']['lr'] = 5e-6
+    configs[i]['sentence_linker']['rnn_model'] = True
+    configs[i]['sentence_linker']['state_vect'] = True
+    configs[i]['sentence_linker']['input_drop'] = 0.01
+    configs[i]['sentence_linker']['num_gen_links'] = 4
+    configs[i]['sentence_linker']['prev_link_hdim'] = 2048
+    configs[i]['sentence_linker']['layers'] = [
+        {'DenseLayer': {
+            'input_dim': 4096, 'hidden_dim': 4096, 'output_dim': 4096, 'hid_drop': 0.0, 'drop_pos': 'output', 'norm': None,
+            'highway_network': None, 'cat_inout': False, 'hidden_act': 'relu'}
+        },
+        {'DenseLayer': {
+            'input_dim': 4096, 'hidden_dim': 4096, 'output_dim': 4096+2048, 'hid_drop': 0.0, 'drop_pos': 'output', 'norm': None,
+            'highway_network': None, 'cat_inout': False, 'hidden_act': 'relu'}
+        }
+    ]
+    configs[i]['name'] = 'bL128_1s_4Links_RNNstate2048_inDr.01|2xDenseLayeDr.0r_Lr5-6_restore_500e_'+str(i)
+# -----------------------------------------------------------------------------
+for i in range(37, 38):
+    configs[i]['training']['epochs'] = 500
+    configs[i]['training']['lr'] = 5e-6
+    configs[i]['sentence_linker']['rnn_model'] = True
+    configs[i]['sentence_linker']['state_vect'] = True
+    configs[i]['sentence_linker']['input_drop'] = 0.01
+    configs[i]['sentence_linker']['num_gen_links'] = 5
+    configs[i]['sentence_linker']['prev_link_hdim'] = 2048
+    configs[i]['sentence_linker']['layers'] = [
+        {'DenseLayer': {
+            'input_dim': 4096, 'hidden_dim': 4096, 'output_dim': 4096, 'hid_drop': 0.0, 'drop_pos': 'output', 'norm': None,
+            'highway_network': None, 'cat_inout': False, 'hidden_act': 'relu'}
+        },
+        {'DenseLayer': {
+            'input_dim': 4096, 'hidden_dim': 4096, 'output_dim': 4096+2048, 'hid_drop': 0.0, 'drop_pos': 'output', 'norm': None,
+            'highway_network': None, 'cat_inout': False, 'hidden_act': 'relu'}
+        }
+    ]
+    configs[i]['name'] = 'bL128_1s_5Links_RNNstate2048_inDr.01|2xDenseLayeDr.0r_Lr5-6_restore_500e_'+str(i)

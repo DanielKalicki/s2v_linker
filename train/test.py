@@ -30,20 +30,13 @@ def loss_calc(output, target, reduction='mean', valid=False):
         target_cnt_list.append(target_cnt)
     for b in range(len(target)):
         loss_res = torch.ones((output_size, target_cnt_list[b]))
-        # l2l_loss = -1 * torch.sqrt(torch.sum(torch.pow(output[b, 0] - output[b, 1], 2))).to('cpu')
-        # l2l_loss = torch.nn.functional.threshold(l2l_loss, -1, -1)
         for o in range(output_size):
             for t in range(target_cnt_list[b]):
                 bl_loss = F.mse_loss(output[b, o].expand(1, config['s2v_dim']),
                                      target[b, t].expand(1, config['s2v_dim']))
                 loss_res[o, t] = bl_loss
-        # loss += loss_res.min()
-        # print(len(target))
-        # print(loss_res)
         loss_out = torch.sort(torch.min(loss_res, dim=0)[0])[0][0:output_size]
         loss += torch.mean(loss_out)
-        # if not valid:
-        #     loss += l2l_loss*0.01
     if reduction == 'mean':
         loss /= len(target)
     # print(loss)
@@ -61,38 +54,33 @@ def loss_fix_pos(output, target, target_mask, reduction="mean", valid=False):
 def test(model, device, test_loader, epoch, model_denoising=None):
     model.eval()
     test_loss = 0
-    # results = []
     with torch.no_grad():
-        for batch_idx, (data, target, target_mask, threshold) in enumerate(test_loader):
+        for batch_idx, (data, target, target_mask) in enumerate(test_loader):
             data, target, target_mask = data.to(device), target.to(device), target_mask.to(device)
-            outputs = []
-            # prev_link = torch.zeros((list(data.shape)[0], config['s2v_dim']), dtype=torch.float).to(device)
-            prev_link = data
-            for _ in range(6): #config['sentence_linker']['num_gen_links']):
-                output = model(data, prev_link)
-                # if model_denoising:
-                #     output = model_denoising(output, None)
-                outputs.append(output)
-                prev_link = output
-            # result = {
-            #     'diff': output.cpu().numpy()-target[:, 0, :].cpu().numpy()
-            # }
-            # results.append(result)
-            output = torch.stack(outputs, dim=1) 
-            # output = output.view(-1, 3, config['s2v_dim'])
-            # print(output.shape)
-            for i in range(6): #config['sentence_linker']['num_gen_links']):
-                dataset_test.check_accuracy(output[0, i].cpu().numpy())
-                print("\t---------------")
-            # loss = loss_calc(output, target, reduction='sum', valid=True).detach()
-            # loss = loss_fix_pos(output, target, target_mask, reduction='mean') # - discriminator_loss*1e-1
-            # test_loss += loss
-            # data_loss = F.mse_loss(output[0, 0].expand(1, config['s2v_dim']),
-            #                        data[0].expand(1, config['s2v_dim']))
-            # print(loss)
-            # print(data_loss)
-    # pickle.dump(results, open('./test_results.pickle', 'wb'))
-    test_loss /= batch_idx+1
+            if config['sentence_linker']['rnn_model']:
+                outputs = []
+                if config['sentence_linker']['state_vect']:
+                    prev_state = torch.zeros(data.shape[0], config['sentence_linker']['prev_link_hdim']).to(device)
+                else:
+                    prev_state = data
+                config['sentence_linker']['num_gen_links'] = 3
+                for _ in range(config['sentence_linker']['num_gen_links']):
+                    if config['sentence_linker']['state_vect']:
+                        output, state = model(data, prev_state)
+                    else:
+                        output = model(data, prev_state)
+                        state = output
+                    outputs.append(output)
+                    prev_state = state
+                output = torch.stack(outputs, dim=1)
+            else:
+                output = model(data, None)
+                output = output.view(-1, config['sentence_linker']['num_gen_links'], config['s2v_dim'])
+            # for i in range(config['sentence_linker']['num_gen_links']):
+            #     dataset_test.check_accuracy(output[0, i].cpu().numpy())
+            #     print("\t---------------")
+            test_loss += loss_calc(output, target, reduction='sum', valid=True).detach()
+    test_loss /= len(test_loader.dataset)
     print('\t\tTest set: Average loss: {:.6f}'.format(test_loss))
     return test_loss
 
@@ -108,15 +96,6 @@ model.load_state_dict(checkpoint['model_state_dict'])
 model.to(device)
 del checkpoint
 
-# denoising_config_num = 22
-model_s2v_denoising = None
-# model_s2v_denoising = SentenceLinker(configs[denoising_config_num])
-# print(model_s2v_denoising)
-# checkpoint = torch.load('./train/save_denoising/'+configs[denoising_config_num]['name'])
-# model_s2v_denoising.load_state_dict(checkpoint['model_state_dict'])
-# model_s2v_denoising.to(device)
-# del checkpoint
-
 dataset_train = WikiLinksBatch(config)
 data_loader_train = torch.utils.data.DataLoader(
     dataset_train, batch_size=config['batch_size'],
@@ -124,13 +103,12 @@ data_loader_train = torch.utils.data.DataLoader(
 
 dataset_test = WikiLinksBatch(config, valid=True)
 data_loader_test = torch.utils.data.DataLoader(
-    dataset_test, batch_size=1,
+    dataset_test, batch_size=128,
     shuffle=False, num_workers=0)
 
 test_loss = 1e6
 for epoch in range(1, 2):
-    current_test_loss = test(model, device, data_loader_test, epoch,
-                             model_denoising=model_s2v_denoising)
+    current_test_loss = test(model, device, data_loader_test, epoch)
     print(current_test_loss)
     if current_test_loss < test_loss:
         test_loss = current_test_loss

@@ -299,7 +299,6 @@ class WikiLinksBatch(Dataset):
             linked_sentence = torch.rand((num_of_links, self.config['s2v_dim'],),
                                         dtype=torch.float) * 100
             link_mask = torch.zeros((num_of_links, self.config['s2v_dim']), dtype=torch.float)
-            loss_threshold = torch.zeros((1), dtype=torch.float)
 
             input_title = batch_dataset[idx]
             input_sentence = torch.from_numpy(
@@ -323,47 +322,11 @@ class WikiLinksBatch(Dataset):
                         break
                 except KeyError:
                     pass
-            # rnd = random.randint(0, int(math.log2(link_cnt_sum)))
-            # if (rnd == 0) or (self.valid):
-            #     break
-            if self.valid:
-                loss_threshold = torch.tensor(0.0)
-            else:
-                loss_threshold = torch.tensor(math.log10(link_cnt_sum)*0.0025)
             # print(input_title)
             # print(valid_links)
             break
         # print(link_mask)
-        return (input_sentence, linked_sentence, link_mask, loss_threshold)
-
-    def get_discriminator_batch(self, generated_batch):
-        global batch_links_data
-
-        # print(generated_batch)
-        batch_size = len(generated_batch)
-        # print(batch_size)
-
-        batch = torch.zeros((batch_size, self.config['s2v_dim']),
-                            dtype=torch.float)
-        labels = torch.zeros((batch_size, 2), dtype=torch.float)
-
-        for i_batch in range(batch_size):
-            # True - real data
-            # False - generated data
-            rnd = random.choice([True, False])
-            labels[i_batch][int(rnd)] = 1.0
-
-            if rnd:
-                rnd_art_idx = random.randint(0, len(batch_links_data)-1)
-                rnd_art_title = list(batch_links_data.keys())[rnd_art_idx]
-                batch[i_batch] = torch.from_numpy(
-                    batch_links_data[rnd_art_title]['first_sentence_vect_gTr']
-                        .astype(np.float32))
-            else:
-                batch[i_batch] = generated_batch[i_batch]
-
-
-        return (batch, labels)
+        return (input_sentence, linked_sentence, link_mask)
 
     def check_accuracy(self, prediction):
         self._find_closest_s2v(prediction)
@@ -375,8 +338,6 @@ def test():
     })
     for i in range(100):
         batcher.__getitem__(i)
-    # print(x)
-    # print(y)
 
 
 # test()
