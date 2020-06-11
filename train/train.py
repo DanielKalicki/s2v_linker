@@ -12,10 +12,11 @@ import time
 import sys
 from configs import configs
 from tqdm import tqdm
+import numpy as np
 
 print(int(sys.argv[1]))
 config = configs[int(sys.argv[1])]
-load_model = 36
+load_model = 41
 
 
 if config['training']['log']:
@@ -38,7 +39,7 @@ def loss_calc(output, target, reduction='mean', valid=False):
         for o in range(output_size):
             for t in range(target_cnt_list[b]):
                 bl_loss = F.mse_loss(output[b, o].expand(1, config['s2v_dim']),
-                                     target[b, t].expand(1, config['s2v_dim']))
+                                    target[b, t].expand(1, config['s2v_dim']))
                 loss_res[o, t] = bl_loss
         loss_out = torch.sort(torch.min(loss_res, dim=0)[0])[0][0:output_size]
         loss += torch.mean(loss_out)
@@ -138,9 +139,7 @@ def test(model, device, test_loader, epoch):
     if config['training']['log']:
         writer.add_scalar('loss/test', test_loss, epoch)
         writer.flush()
-
-    if epoch == 10 or True:
-        print('\t\tTest set: Average loss: {:.6f}'.format(test_loss))
+    print('\t\tTest set: Average loss: {:.6f}'.format(test_loss))
     return test_loss
 
 

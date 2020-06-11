@@ -1,5 +1,4 @@
 import copy
-import tensorflow as tf
 
 
 default_config = {
@@ -19,7 +18,6 @@ default_config = {
         'clipnorm': None,
         'batch_repeat': 1,
         'lr': 1e-4,
-        'lr_discriminator': 2e-4,
         'epochs': 100,
         'log': True,
         'l1_loss': 0.0,
@@ -757,3 +755,103 @@ for i in range(37, 38):
         }
     ]
     configs[i]['name'] = 'bL128_1s_5Links_RNNstate2048_inDr.01|2xDenseLayeDr.0r_Lr5-6_restore_500e_'+str(i)
+# -----------------------------------------------------------------------------
+for i in range(38, 39):
+    configs[i]['training']['epochs'] = 500
+    configs[i]['training']['lr'] = 5e-5
+    configs[i]['sentence_linker']['rnn_model'] = True
+    configs[i]['sentence_linker']['state_vect'] = True
+    configs[i]['sentence_linker']['input_drop'] = 0.2
+    configs[i]['sentence_linker']['num_gen_links'] = 3
+    configs[i]['sentence_linker']['prev_link_hdim'] = 2048
+    configs[i]['sentence_linker']['layers'] = [
+        {'DenseLayer': {
+            'input_dim': 4096, 'hidden_dim': 4096, 'output_dim': 4096, 'hid_drop': 0.5, 'drop_pos': 'output', 'norm': None,
+            'highway_network': None, 'cat_inout': False, 'hidden_act': 'relu'}
+        },
+        {'DenseLayer': {
+            'input_dim': 4096, 'hidden_dim': 4096, 'output_dim': 4096+2048, 'hid_drop': 0.5, 'drop_pos': 'output', 'norm': None,
+            'highway_network': None, 'cat_inout': False, 'hidden_act': 'relu'}
+        }
+    ]
+    configs[i]['name'] = 'bL128_1s_3Links_batch12links_RNNstate2048_inDr.5|2xDenseLayeDr.5r_Lr5-5_restore_500e_'+str(i)
+# -----------------------------------------------------------------------------
+for i in range(39, 40):
+    configs[i]['training']['epochs'] = 500
+    configs[i]['training']['lr'] = 5e-5
+    configs[i]['sentence_linker']['rnn_model'] = True
+    configs[i]['sentence_linker']['state_vect'] = True
+    configs[i]['sentence_linker']['input_drop'] = 0.2
+    configs[i]['sentence_linker']['num_gen_links'] = 4
+    configs[i]['sentence_linker']['prev_link_hdim'] = 2048
+    configs[i]['sentence_linker']['layers'] = [
+        {'DenseLayer': {
+            'input_dim': 4096, 'hidden_dim': 4096, 'output_dim': 4096, 'hid_drop': 0.5, 'drop_pos': 'output', 'norm': None,
+            'highway_network': None, 'cat_inout': False, 'hidden_act': 'relu'}
+        },
+        {'DenseLayer': {
+            'input_dim': 4096, 'hidden_dim': 4096, 'output_dim': 4096+2048, 'hid_drop': 0.5, 'drop_pos': 'output', 'norm': None,
+            'highway_network': None, 'cat_inout': False, 'hidden_act': 'relu'}
+        }
+    ]
+    configs[i]['name'] = 'bL128_1s_4Links_batch12links_RNNstate2048_inDr.5|2xDenseLayeDr.5r_Lr5-5_restore_500e_'+str(i)
+# -----------------------------------------------------------------------------
+for i in range(40, 41):
+    configs[i]['training']['epochs'] = 500
+    configs[i]['training']['lr'] = 5e-6
+    configs[i]['sentence_linker']['rnn_model'] = True
+    configs[i]['sentence_linker']['state_vect'] = True
+    configs[i]['sentence_linker']['input_drop'] = 0.2
+    configs[i]['sentence_linker']['num_gen_links'] = 4
+    configs[i]['sentence_linker']['prev_link_hdim'] = 2048
+    configs[i]['sentence_linker']['layers'] = [
+        {'DenseLayer': {
+            'input_dim': 4096, 'hidden_dim': 4096, 'output_dim': 4096, 'hid_drop': 0.5, 'drop_pos': 'output', 'norm': None,
+            'highway_network': None, 'cat_inout': False, 'hidden_act': 'relu'}
+        },
+        {'DenseLayer': {
+            'input_dim': 4096, 'hidden_dim': 4096, 'output_dim': 4096+2048, 'hid_drop': 0.5, 'drop_pos': 'output', 'norm': None,
+            'highway_network': None, 'cat_inout': False, 'hidden_act': 'relu'}
+        }
+    ]
+    configs[i]['name'] = 'bL128_1s_4Links_batch8links_RNNstate2048_inDr.5|2xDenseLayeDr.5r_Lr5-6_restore_500e_'+str(i)
+# -----------------------------------------------------------------------------
+for i in range(41, 42):
+    configs[i]['training']['epochs'] = 500
+    configs[i]['training']['lr'] = 5e-6
+    configs[i]['sentence_linker']['rnn_model'] = True
+    configs[i]['sentence_linker']['state_vect'] = True
+    configs[i]['sentence_linker']['input_drop'] = 0.2
+    configs[i]['sentence_linker']['num_gen_links'] = 4
+    configs[i]['sentence_linker']['prev_link_hdim'] = 2048
+    configs[i]['sentence_linker']['layers'] = [
+        {'DenseLayer': {
+            'input_dim': 4096, 'hidden_dim': 4096, 'output_dim': 4096, 'hid_drop': 0.5, 'drop_pos': 'output', 'norm': None,
+            'highway_network': None, 'cat_inout': False, 'hidden_act': 'relu'}
+        },
+        {'DenseLayer': {
+            'input_dim': 4096, 'hidden_dim': 4096, 'output_dim': 4096+2048, 'hid_drop': 0.5, 'drop_pos': 'output', 'norm': None,
+            'highway_network': None, 'cat_inout': False, 'hidden_act': 'relu'}
+        }
+    ]
+    configs[i]['name'] = 'bL128_1s_4Links_batch8links_outLossMask.8_RNNstate2048_inDr.5|2xDenseLayeDr.5r_Lr5-6_restore_500e_'+str(i)
+# -----------------------------------------------------------------------------
+for i in range(42, 43):
+    configs[i]['training']['epochs'] = 500
+    configs[i]['training']['lr'] = 5e-6
+    configs[i]['sentence_linker']['rnn_model'] = True
+    configs[i]['sentence_linker']['state_vect'] = True
+    configs[i]['sentence_linker']['input_drop'] = 0.01
+    configs[i]['sentence_linker']['num_gen_links'] = 4
+    configs[i]['sentence_linker']['prev_link_hdim'] = 2048
+    configs[i]['sentence_linker']['layers'] = [
+        {'DenseLayer': {
+            'input_dim': 4096, 'hidden_dim': 4096, 'output_dim': 4096, 'hid_drop': 0.0, 'drop_pos': 'output', 'norm': None,
+            'highway_network': None, 'cat_inout': False, 'hidden_act': 'relu'}
+        },
+        {'DenseLayer': {
+            'input_dim': 4096, 'hidden_dim': 4096, 'output_dim': 4096+2048, 'hid_drop': 0.0, 'drop_pos': 'output', 'norm': None,
+            'highway_network': None, 'cat_inout': False, 'hidden_act': 'relu'}
+        }
+    ]
+    configs[i]['name'] = 'bL128_1s_4Links_batch8links_RNNstate2048_inDr.01|2xDenseLayeDr.0r_Lr5-6_restore_500e_'+str(i)

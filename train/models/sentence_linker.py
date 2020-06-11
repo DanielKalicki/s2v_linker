@@ -414,7 +414,7 @@ class SentenceLinker(nn.Module):
         if config['sentence_linker']['input_drop'] != 0.0:
             self.layers.append(nn.Dropout(
                 p=config['sentence_linker']['input_drop']))
-        if config['sentence_linker']['num_gen_links'] > 1:
+        if config['sentence_linker']['rnn_model'] and not config['sentence_linker']['state_vect']:
             self.link_proc_layer = nn.Linear(self.s2v_dim, config['sentence_linker']['prev_link_hdim'])
 
         for layer_idx, layer in enumerate(config['sentence_linker']['layers']):
@@ -422,7 +422,7 @@ class SentenceLinker(nn.Module):
             module_config = layer[layer_type]
 
             input_dim = module_config['input_dim']
-            if (layer_idx == 0) and (config['sentence_linker']['num_gen_links'] > 1):
+            if (layer_idx == 0) and config['sentence_linker']['rnn_model']:
                 input_dim += config['sentence_linker']['prev_link_hdim']
 
             if layer_type == 'SteGluFfn':
@@ -465,12 +465,6 @@ class SentenceLinker(nn.Module):
                                     highway_network=module_config['highway_network'],
                                     cat_inout=module_config['cat_inout'],
                                     hidden_act=module_config['hidden_act'])
-            elif layer_type == 'DenseLayer4l':
-                module = DenseLayer4l(input_dim=input_dim,
-                                      hidden_dim=module_config['hidden_dim'],
-                                      output_dim=module_config['output_dim'],
-                                      drop=module_config['hid_drop'],
-                                      drop_pos=module_config['drop_pos'])
             elif layer_type == 'FcLayer':
                 module = FcLayer(input_dim=input_dim,
                                  output_dim=module_config['output_dim'],
@@ -479,9 +473,16 @@ class SentenceLinker(nn.Module):
             self.layers.append(module)
 
     def forward(self, x, prev_link):
-        if self.config['sentence_linker']['num_gen_links'] > 1:
-            prev_link = self.link_proc_layer(prev_link)
+        if self.config['sentence_linker']['rnn_model']:
+            if not self.config['sentence_linker']['state_vect']:
+                prev_link = self.link_proc_layer(prev_link)
             x = torch.cat((x, prev_link), dim=1)
         for module in self.layers:
             x = module(x)
-        return x
+        if self.config['sentence_linker']['state_vect']:
+            output = x
+            x = output[:, :self.config['s2v_dim']]
+            state = output[:, self.config['s2v_dim']:]
+            return x, state
+        else:
+            return x

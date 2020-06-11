@@ -290,42 +290,37 @@ class WikiLinksBatch(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        while True:
-            if not self.valid:
-                idx = random.randint(0, len(batch_dataset)-1)
-            num_of_links = 3
-            input_sentence = torch.zeros((self.config['s2v_dim'],),
-                                        dtype=torch.float)
-            linked_sentence = torch.rand((num_of_links, self.config['s2v_dim'],),
-                                        dtype=torch.float) * 100
-            link_mask = torch.zeros((num_of_links, self.config['s2v_dim']), dtype=torch.float)
+        num_of_links = 8
+        input_sentence = torch.zeros((self.config['s2v_dim'],),
+                                    dtype=torch.float)
+        linked_sentence = torch.rand((num_of_links, self.config['s2v_dim'],),
+                                    dtype=torch.float) * 100
+        link_mask = torch.zeros((num_of_links, self.config['s2v_dim']), dtype=torch.float)
 
-            input_title = batch_dataset[idx]
-            input_sentence = torch.from_numpy(
-                batch_full_data[input_title]['sentence_vect_gTr'].astype(np.float32))
-            links = batch_full_data[input_title]['links']
-            link_cnt_sum = 1
-            cnt = 0
-            valid_links = []
-            for i in range(len(links)):
-                try:
-                    linked_art = links[i].lower()
-                    linked_sentence[cnt] = torch.from_numpy(
-                        batch_full_data[linked_art]['sentence_vect_gTr']
-                            .astype(np.float32))
-                    link_mask[cnt] = torch.from_numpy(np.ones((self.config['s2v_dim'],))
-                                                        .astype(np.float32))
-                    link_cnt_sum += links_dict[links[i].lower()]
-                    valid_links.append(linked_art)
-                    cnt += 1
-                    if cnt >= num_of_links:
-                        break
-                except KeyError:
-                    pass
-            # print(input_title)
-            # print(valid_links)
-            break
-        # print(link_mask)
+        input_title = batch_dataset[idx]
+        input_sentence = torch.from_numpy(
+            batch_full_data[input_title]['sentence_vect_gTr'].astype(np.float32))
+        links = batch_full_data[input_title]['links']
+        link_cnt_sum = 1
+        cnt = 0
+        valid_links = []
+        for i in range(len(links)):
+            try:
+                linked_art = links[i].lower()
+                linked_sentence[cnt] = torch.from_numpy(
+                    batch_full_data[linked_art]['sentence_vect_gTr']
+                        .astype(np.float32))
+                link_mask[cnt] = torch.from_numpy(np.ones((self.config['s2v_dim'],))
+                                                    .astype(np.float32))
+                link_cnt_sum += links_dict[links[i].lower()]
+                valid_links.append(linked_art)
+                cnt += 1
+                if cnt >= num_of_links:
+                    break
+            except KeyError:
+                pass
+        # print(input_title)
+        # print(valid_links)
         return (input_sentence, linked_sentence, link_mask)
 
     def check_accuracy(self, prediction):

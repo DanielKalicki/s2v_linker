@@ -63,7 +63,7 @@ def test(model, device, test_loader, epoch, model_denoising=None):
                     prev_state = torch.zeros(data.shape[0], config['sentence_linker']['prev_link_hdim']).to(device)
                 else:
                     prev_state = data
-                config['sentence_linker']['num_gen_links'] = 3
+                config['sentence_linker']['num_gen_links'] = 6
                 for _ in range(config['sentence_linker']['num_gen_links']):
                     if config['sentence_linker']['state_vect']:
                         output, state = model(data, prev_state)
@@ -76,9 +76,9 @@ def test(model, device, test_loader, epoch, model_denoising=None):
             else:
                 output = model(data, None)
                 output = output.view(-1, config['sentence_linker']['num_gen_links'], config['s2v_dim'])
-            # for i in range(config['sentence_linker']['num_gen_links']):
-            #     dataset_test.check_accuracy(output[0, i].cpu().numpy())
-            #     print("\t---------------")
+            for i in range(config['sentence_linker']['num_gen_links']):
+                dataset_test.check_accuracy(output[0, i].cpu().numpy())
+                print("\t---------------")
             test_loss += loss_calc(output, target, reduction='sum', valid=True).detach()
     test_loss /= len(test_loader.dataset)
     print('\t\tTest set: Average loss: {:.6f}'.format(test_loss))
@@ -103,7 +103,7 @@ data_loader_train = torch.utils.data.DataLoader(
 
 dataset_test = WikiLinksBatch(config, valid=True)
 data_loader_test = torch.utils.data.DataLoader(
-    dataset_test, batch_size=128,
+    dataset_test, batch_size=1,
     shuffle=False, num_workers=0)
 
 test_loss = 1e6
